@@ -15,11 +15,12 @@ public class app_1 extends JFrame implements ActionListener, KeyListener {
     final int KNIFE_W = 50;
     final int KNIFE_H = 50;
     
-    // 安全距離
+    // ★★★ 設定安全距離 (度數) ★★★
+    // 如果兩把刀角度差小於這個數值，就算撞到。數值越大越難玩。
     final int SAFE_ANGLE_GAP = 15; 
 
     boolean flying = false;
-    boolean isGameOver = false;
+    boolean isGameOver = false; // 新增遊戲結束狀態
 
     final int START_KEN_X = (400 - KNIFE_W) / 2;
     final int START_KEN_Y = 500;
@@ -56,7 +57,7 @@ public class app_1 extends JFrame implements ActionListener, KeyListener {
         imageLabel_target.setBounds(centerX - 100, 100, 300, 300); 
         cp.add(imageLabel_target);
 
-        setTitle("射飛刀 - 無限挑戰版");
+        setTitle("射飛刀");
         setSize(400, 800);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         
@@ -82,6 +83,7 @@ public class app_1 extends JFrame implements ActionListener, KeyListener {
     }
 
     public void startShooting() {
+        // 如果正在飛，或者遊戲已經結束，就不能發射
         if (!flying && !isGameOver) {
             flying = true;
             flyTimer.start();
@@ -123,24 +125,31 @@ public class app_1 extends JFrame implements ActionListener, KeyListener {
             Rectangle targetRect = imageLabel_target.getBounds();
             targetRect.grow(-110, -110); 
 
+            // 判斷是否命中樹幹
             if (knifeRect.intersects(targetRect)) {
                 flying = false;
                 flyTimer.stop();
                 
+                // 計算這把刀的插入角度
                 int currentHitAngle = -imageLabel_target.angle;
                 
+                // ★★★ 關鍵邏輯：檢查是否撞到其他刀 ★★★
                 if (imageLabel_target.checkCollision(currentHitAngle, SAFE_ANGLE_GAP)) {
+                    // 撞到了！遊戲結束
                     gameOver();
                 } else {
+                    // 沒撞到，成功插入
                     imageLabel_target.addKnife(currentHitAngle);
                     imageLabel_target.repaint();
                     
+                    // 重置下一把刀
                     ken_y = START_KEN_Y;
                     imageLabel_ken.setLocation(ken_x, ken_y);
                     imageLabel_ken.setVisible(true);
                 }
             }
             else if (ken_y < -50) {
+                // 沒射中飛出去了
                 flying = false;
                 flyTimer.stop();
                 ken_y = START_KEN_Y;
@@ -150,46 +159,29 @@ public class app_1 extends JFrame implements ActionListener, KeyListener {
         }
     }
     
-    // 遊戲結束處理
+    //遊戲結束處理
     public void gameOver() {
         System.out.println("Game Over");
         isGameOver = true;
-        rotatian.stop(); // 停止旋轉
-        flyTimer.stop(); // 停止飛刀
+        rotatian.stop(); 
+        flyTimer.stop(); 
         
         imageLabel_ken.setVisible(true); 
 
-        // 自訂圖示 (這裡使用原本的飛刀圖片)
-        String iconPath = "C:\\javaHW\\javaHomework\\final\\Gemini_Generated_Image_99w8ld99w8ld99w8.png";
-        ImageIcon customIcon = loadIcon(iconPath, 64, 64);
+        // 1. 準備自訂圖示
+        // 你可以換成任何你想要的圖片路徑，例如一顆骷髏頭或爆炸圖
+        // 這裡我先用你原本的飛刀圖片當範例，並設定大小為 64x64
+        String iconPath = "C:\\javaHW\\javaHomework\\final\\Adobe Express - file-fail.png";
+        ImageIcon customIcon = loadIcon(iconPath, 62, 64);
 
-        // 顯示視窗 (程式會停在這裡，直到按下確定)
-        JOptionPane.showMessageDialog(this, 
-            "太可惜了！刀子撞在一起了！\n按下確定後重新開始。", 
-            "挑戰失敗", 
-            JOptionPane.PLAIN_MESSAGE,
-            customIcon);
-        
-        // ★★★ 當使用者按下確定後，執行重置 ★★★
-        resetGame();
-    }
-
-    // ★★★ 新增：重置遊戲的方法 ★★★
-    public void resetGame() {
-        // 1. 重置狀態旗標
-        isGameOver = false;
-        flying = false;
-        
-        // 2. 重置飛刀位置
-        ken_y = START_KEN_Y;
-        imageLabel_ken.setLocation(ken_x, ken_y);
-        imageLabel_ken.setVisible(true);
-        
-        // 3. 清空樹上的刀子
-        imageLabel_target.reset();
-        
-        // 4. 重新啟動旋轉
-        rotatian.start();
+        // 2. 跳出視窗 (注意參數變多了)
+        JOptionPane.showMessageDialog(
+            this,                                   // 父視窗
+            "撞到了!!!", // 內容文字
+            "失敗",                             // 標題
+            JOptionPane.PLAIN_MESSAGE,              // 訊息類型 (用 PLAIN，因為我們要用自己的圖)
+            customIcon                              // ★★★ 這裡放入你的圖片 ★★★
+        ); 
     }
 
     private ImageIcon loadIcon(String path, int w, int h) {
@@ -206,4 +198,57 @@ public class app_1 extends JFrame implements ActionListener, KeyListener {
     class RotatedPanel extends JPanel {
         Image imgTree;
         Image imgKnife;
-        int angle = 0;
+        int angle = 0; 
+        
+        ArrayList<Integer> stuckKnives = new ArrayList<>();
+
+        public RotatedPanel(Image tree, Image knife) {
+            this.imgTree = tree;
+            this.imgKnife = knife;
+            setOpaque(false); 
+        }
+
+        public void addKnife(int hitAngle) {
+            stuckKnives.add(hitAngle);
+        }
+
+        public boolean checkCollision(int newAngle, int safeGap) {
+            for (int oldAngle : stuckKnives) {
+                // 例如：355度和5度，數學差350，但實際距離只有10度
+                int diff = Math.abs(newAngle - oldAngle) % 360;
+                int distance = Math.min(diff, 360 - diff);
+                
+                if (distance < safeGap) {
+                    return true; // 太近了，撞到
+                }
+            }
+            return false; // 安全
+        }
+
+        //@Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            
+            Graphics2D g2d = (Graphics2D) g;
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            g2d.translate(getWidth() / 2, getHeight() / 2);
+            g2d.rotate(Math.toRadians(angle));
+            
+            if (imgKnife != null) {
+                for (int knifeAngle : stuckKnives) {
+                    var oldTransform = g2d.getTransform(); 
+                    
+                    g2d.rotate(Math.toRadians(knifeAngle)); 
+                    g2d.drawImage(imgKnife, -25, 30, this); 
+                    
+                    g2d.setTransform(oldTransform); 
+                }
+            }
+
+            if (imgTree != null) {
+                g2d.drawImage(imgTree, -50, -50, this); 
+            }
+        }
+    }
+}
