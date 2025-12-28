@@ -9,17 +9,22 @@ public class app_1 extends JFrame implements ActionListener, KeyListener {
     Container cp;
     RotatedPanel imageLabel_target; 
     JLabel imageLabel_ken;
+    
+    // ★★★ 新增：計分板 Label ★★★
+    JLabel scoreLabel; 
+    
     JButton shot = new JButton("shot");
     
-    // 刀子尺寸
     final int KNIFE_W = 50;
     final int KNIFE_H = 50;
-    
-    // 安全距離
     final int SAFE_ANGLE_GAP = 15; 
 
     boolean flying = false;
     boolean isGameOver = false;
+
+    // ★★★ 新增：分數變數 ★★★
+    int score = 0;       // 目前插了幾支
+    int highScore = 0;   // 最高紀錄
 
     final int START_KEN_X = (400 - KNIFE_W) / 2;
     final int START_KEN_Y = 500;
@@ -40,6 +45,13 @@ public class app_1 extends JFrame implements ActionListener, KeyListener {
         ImageIcon icon_ken = loadIcon(imagePathknife, KNIFE_W, KNIFE_H);
         ImageIcon icon_target = loadIcon(imagePathtree, 100, 100);
 
+        // --- 設定計分板 ---
+        scoreLabel = new JLabel("目前分數: 0 |  歷史最高紀錄: 0");
+        scoreLabel.setForeground(Color.WHITE); // 設定字體顏色
+        scoreLabel.setFont(new Font("微軟正黑體", Font.BOLD, 20)); // 設定字型大小
+        scoreLabel.setBounds(20, 20, 300, 30); // 設定位置在左上角
+        cp.add(scoreLabel);
+
         // --- 設定飛刀 ---
         imageLabel_ken = new JLabel(icon_ken);
         if (icon_ken.getIconWidth() == -1) {
@@ -56,7 +68,7 @@ public class app_1 extends JFrame implements ActionListener, KeyListener {
         imageLabel_target.setBounds(centerX - 100, 100, 300, 300); 
         cp.add(imageLabel_target);
 
-        setTitle("knife Hit");
+        setTitle("Knife Hit");
         setSize(400, 800);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         
@@ -132,9 +144,15 @@ public class app_1 extends JFrame implements ActionListener, KeyListener {
                 if (imageLabel_target.checkCollision(currentHitAngle, SAFE_ANGLE_GAP)) {
                     gameOver();
                 } else {
+                    // 成功插入
                     imageLabel_target.addKnife(currentHitAngle);
                     imageLabel_target.repaint();
                     
+                    // ★★★ 更新分數 ★★★
+                    score++;
+                    updateScoreBoard();
+                    
+                    // 重置下一把刀
                     ken_y = START_KEN_Y;
                     imageLabel_ken.setLocation(ken_x, ken_y);
                     imageLabel_ken.setVisible(true);
@@ -150,45 +168,52 @@ public class app_1 extends JFrame implements ActionListener, KeyListener {
         }
     }
     
-    // 遊戲結束處理
+    // ★★★ 更新計分板顯示 ★★★
+    public void updateScoreBoard() {
+        scoreLabel.setText("目前分數: " + score + "  |  歷史最高紀錄: " + highScore);
+    }
+
     public void gameOver() {
         System.out.println("Game Over");
         isGameOver = true;
-        rotatian.stop(); // 停止旋轉
-        flyTimer.stop(); // 停止飛刀
+        rotatian.stop(); 
+        flyTimer.stop(); 
         
         imageLabel_ken.setVisible(true); 
 
-        // 自訂圖示 (這裡使用原本的飛刀圖片)
-        String iconPath = "C:\\javaHW\\javaHomework\\final\\Adobe Express - file-fail.png";
-        ImageIcon customIcon = loadIcon(iconPath, 64, 64);
-
-        // 顯示視窗 (程式會停在這裡，直到按下確定)
-        JOptionPane.showMessageDialog(this, 
-            "撞到了!!!\n按下確定重新開始", 
-            "失敗", 
-            JOptionPane.PLAIN_MESSAGE,
-            customIcon);
+        // ★★★ 檢查是否打破紀錄 ★★★
+        if (score > highScore) {
+            highScore = score; // 更新最高分
+            String iconPath1 = "C:\\javaHW\\javaHomework\\final\\Reset (2).png";
+            ImageIcon customIcon1 = loadIcon(iconPath1, 64, 64);
+            updateScoreBoard();
+            JOptionPane.showMessageDialog(this, 
+                "撞到了！\n本次得分: " + score+"\n新紀錄!!!" , "新紀錄", JOptionPane.PLAIN_MESSAGE,customIcon1);
+        } else {
+            String iconPath2 = "C:\\javaHW\\javaHomework\\final\\Adobe Express - file-fail.png";
+            ImageIcon customIcon2 = loadIcon(iconPath2, 64, 64);
+    
+            JOptionPane.showMessageDialog(this, 
+                "撞到了！\n本次得分: " + score + "\n最高紀錄: " + highScore, "gameOver", JOptionPane.PLAIN_MESSAGE,customIcon2);
+        }
         
-        // ★★★ 當使用者按下確定後，執行重置 ★★★
         resetGame();
     }
 
-    // ★★★ 新增：重置遊戲的方法 ★★★
     public void resetGame() {
-        // 1. 重置狀態旗標
         isGameOver = false;
         flying = false;
         
-        // 2. 重置飛刀位置
+        // ★★★ 分數歸零，但最高分保留 ★★★
+        score = 0;
+        updateScoreBoard();
+        
         ken_y = START_KEN_Y;
         imageLabel_ken.setLocation(ken_x, ken_y);
         imageLabel_ken.setVisible(true);
         
-        // 3. 清空樹上的刀子
         imageLabel_target.reset();
         
-        // 4. 重新啟動旋轉
         rotatian.start();
     }
 
@@ -220,10 +245,9 @@ public class app_1 extends JFrame implements ActionListener, KeyListener {
             stuckKnives.add(hitAngle);
         }
         
-        // ★★★ 新增：清空刀子的方法 ★★★
         public void reset() {
-            stuckKnives.clear(); // 清空清單
-            repaint(); // 重畫畫面
+            stuckKnives.clear(); 
+            repaint(); 
         }
 
         public boolean checkCollision(int newAngle, int safeGap) {
