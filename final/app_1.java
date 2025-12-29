@@ -44,14 +44,14 @@ public class app_1 extends JFrame implements ActionListener{
         ImageIcon icon_ken=image(imagePathknife, knifesize_W, knifesize_H);
         ImageIcon icon_tree=image(imagePathtree, 100, 100);
 
-        // --- 設定計分板 ---
+        //計分板
         scoreLabel=new JLabel("目前分數: 0  |  歷史最高紀錄: 0");
         scoreLabel.setForeground(Color.WHITE); // 設定字體顏色
         scoreLabel.setFont(new Font("微軟正黑體",Font.BOLD,20)); // 設定字型大小
         scoreLabel.setBounds(20,20,300,30); // 設定位置在左上角
         cp.add(scoreLabel);
 
-        // --- 設定飛刀 ---
+        //設定刀
         imageLabel_ken=new JLabel(icon_ken);
         if(icon_ken.getIconWidth()==-1){
             imageLabel_ken.setOpaque(true);
@@ -61,7 +61,7 @@ public class app_1 extends JFrame implements ActionListener{
         imageLabel_ken.setBounds(ken_x,ken_y,knifesize_W,knifesize_H);
         cp.add(imageLabel_ken);
 
-        // --- 設定旋轉面板 ---
+        //設定旋轉面板
         imageLabel_tree=new RotatedPanel(icon_tree.getImage(),icon_ken.getImage());
         int centerX=(400-100)/2;
         imageLabel_tree.setBounds(centerX-100,100,300,300); 
@@ -131,15 +131,15 @@ public class app_1 extends JFrame implements ActionListener{
                     gameOver();
                 }
                 else{
-                    // 成功插入
+                    //成功
                     imageLabel_tree.newKnife(currentHitAngle);
                     imageLabel_tree.repaint();
                     
-                    // 更新分數
+                    //分數更新
                     score++;
                     updateSB();
                     
-                    // 重置下一把刀
+                    //重置下一把
                     ken_y = kenstart_Y;
                     imageLabel_ken.setLocation(ken_x, ken_y);
                     imageLabel_ken.setVisible(true);
@@ -155,7 +155,7 @@ public class app_1 extends JFrame implements ActionListener{
         }
     }
     
-    // 更新計分板顯示
+    //更新計分板
     public void updateSB(){
         scoreLabel.setText("目前分數: " + score + "  |  歷史最高紀錄: " + highScore);
     }
